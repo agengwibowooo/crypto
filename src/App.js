@@ -61,7 +61,7 @@ function App() {
             range: [0],
         };
         axios
-            .post("https://scanner.tradingview.com/crypto/scan", param)
+            .post("https://cors-anywhere.herokuapp.com/https://scanner.tradingview.com/crypto/scan", param)
             .then((res) => {
                 const mapping = [];
                 res.data.data.forEach((element) => {
