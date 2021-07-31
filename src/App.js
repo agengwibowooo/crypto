@@ -30,7 +30,7 @@ function App() {
                 {
                     left: "name,description",
                     operation: "match",
-                    right: "btc",
+                    right: "/ bitcoin",
                 },
             ],
             options: {
@@ -43,33 +43,42 @@ function App() {
                 tickers: [],
             },
             columns: [
-                "currency_logoid",
                 "name",
                 "close|5",
+                "RSI|5",
+                "RSI|1",
+                "MACD.macd|5",
+                "MACD.signal|5",
                 "SMA200|5",
                 "SMA100|5",
                 "SMA50|5",
-                "RSI|5",
                 "change|5",
                 "high|5",
                 "low|5",
             ],
             sort: {
                 sortBy: "RSI|5",
-                sortOrder: "asc",
+                sortOrder: "desc",
             },
             range: [0],
         };
         axios
-            .post("https://cors-anywhere.herokuapp.com/https://scanner.tradingview.com/crypto/scan", param)
+            .post("/crypto/scan", param)
             .then((res) => {
                 const mapping = [];
-                res.data.data.forEach((element) => {
+                const macdIdx = param.columns.findIndex(
+                    (item) => item === "MACD.macd|5"
+                );
+                const macdSignal = param.columns.findIndex(
+                    (item) => item === "MACD.signal|5"
+                );
+                const bullishMacd = res.data.data.filter(
+                    (item) => item.d[macdIdx] > item.d[macdSignal]
+                );
+                bullishMacd.forEach((element) => {
                     let obj = {};
                     element.d.forEach((val, idx) => {
-                        if (idx !== 0) {
-                            obj[param.columns[idx]] = val;
-                        }
+                        obj[param.columns[idx]] = val;
                     });
                     mapping.push(obj);
                 });
@@ -86,7 +95,7 @@ function App() {
             <MaterialTable
                 columns={
                     column &&
-                    column.slice(1).map((item) => {
+                    column.map((item) => {
                         return {
                             title: item,
                             field: item,
@@ -98,10 +107,22 @@ function App() {
                     search: true,
                     paging: false,
                     rowStyle: (x) => {
-                        if (data && data[x.tableData.id]["RSI|5"] < 30) {
-                            return {
-                                backgroundColor: "pink",
-                            };
+                        if (
+                            data &&
+                            x &&
+                            x?.tableData &&
+                            x?.tableData?.id !== undefined &&
+                            data[x.tableData.id] !== undefined
+                        ) {
+                            if (data[x.tableData.id]["RSI|5"] > 70) {
+                                return {
+                                    backgroundColor: "lightgreen",
+                                };
+                            } else if (data[x.tableData.id]["RSI|5"] < 30) {
+                                return {
+                                    backgroundColor: "pink",
+                                };
+                            }
                         }
                     },
                 }}
